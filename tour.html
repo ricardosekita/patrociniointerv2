@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Inter SG — Tour da Marca · Vídeo Interativo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&display=swap">
+
+<style>
+  :root {
+    --ink: #04060d;
+    --ink-2: #080b16;
+    --paper: #f3f5ff;
+    --paper-dim: #c8cfe8;
+    --mute: #6b7499;
+    --blue: oklch(0.68 0.22 258);
+    --blue-hot: oklch(0.78 0.26 258);
+    --blue-dim: oklch(0.45 0.18 258);
+    --blue-glow: oklch(0.68 0.22 258 / 0.45);
+    --blue-ghost: oklch(0.68 0.22 258 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+  #root { position: fixed; inset: 0; }
+
+  @keyframes sigPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* canvas backdrop chrome — sits inside Stage canvas */
+  .stage-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(120, 160, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(120, 160, 255, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .stage-bg-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(120, 160, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(120, 160, 255, 0.1) 1px, transparent 1px);
+    background-size: 240px 240px;
+  }
+  .stage-bg-grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 20%, var(--ink) 85%);
+  }
+  .stage-holo {
+    position: absolute;
+    inset: -10%;
+    background:
+      radial-gradient(ellipse 50% 40% at 20% 30%, var(--blue-ghost), transparent 60%),
+      radial-gradient(ellipse 40% 50% at 80% 70%, oklch(0.55 0.22 280 / 0.12), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(40px);
+  }
+  .stage-scan {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 3px,
+      rgba(120, 160, 255, 0.03) 3px,
+      rgba(120, 160, 255, 0.03) 4px
+    );
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    z-index: 50;
+  }
+  body.scan-off .stage-scan { display: none; }
+
+  /* Tweaks panel — bottom-right, fixed */
+  #tweaks {
+    position: fixed;
+    right: 24px;
+    bottom: 96px;
+    width: 280px;
+    background: rgba(8, 11, 22, 0.94);
+    backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(120, 160, 255, 0.28);
+    padding: 18px;
+    z-index: 2147483000;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--paper);
+    letter-spacing: 0.08em;
+    display: none;
+  }
+  #tweaks.on { display: block; }
+  #tweaks h5 {
+    margin: 0 0 14px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--blue);
+    display: flex;
+    justify-content: space-between;
+  }
+  .tw-row { padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.08); }
+  .tw-row:first-of-type { border-top: 0; padding-top: 4px; }
+  .tw-row label {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 10px;
+    color: var(--paper-dim);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .tw-row input[type="text"] {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(120,160,255,0.2);
+    color: var(--paper);
+    padding: 9px 11px;
+    font-family: 'Space Grotesk', system-ui;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+    outline: none;
+  }
+  .tw-row input[type="text"]:focus {
+    border-color: var(--blue-hot);
+    box-shadow: 0 0 0 1px var(--blue-hot);
+  }
+  .tw-swatches { display: flex; gap: 8px; }
+  .tw-swatch {
+    flex: 1;
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 120ms, transform 120ms;
+    position: relative;
+  }
+  .tw-swatch.active {
+    border-color: var(--blue-hot);
+    transform: scale(1.06);
+  }
+  .tw-toggle {
+    width: 36px; height: 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px; cursor: pointer; position: relative;
+    transition: background 0.2s;
+  }
+  .tw-toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: var(--paper);
+    border-radius: 50%; transition: transform 0.2s, background 0.2s;
+  }
+  .tw-toggle.on { background: var(--blue); }
+  .tw-toggle.on::after { transform: translateX(16px); }
+  .tw-row.split { display: flex; justify-content: space-between; align-items: center; }
+  .tw-row.split label { margin: 0; }
+
+  /* Chapter strip — fixed bottom of viewport, above playback bar */
+  #chapters {
+    position: fixed;
+    left: 24px; right: 24px;
+    bottom: 70px;
+    display: flex;
+    gap: 4px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  #chapters .chap {
+    flex: 1;
+    pointer-events: auto;
+    background: rgba(4,6,13,0.95);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(120,160,255,0.22);
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--paper-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 140ms, border-color 140ms, color 140ms;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+  #chapters .chap .num {
+    color: var(--blue);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  #chapters .chap .label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #chapters .chap:hover {
+    background: rgba(120,160,255,0.08);
+    border-color: var(--blue);
+    color: var(--paper);
+  }
+  #chapters .chap.active {
+    background: rgba(120,160,255,0.14);
+    border-color: var(--blue-hot);
+    color: var(--paper);
+  }
+  #chapters .chap.active .num { color: var(--blue-hot); }
+  #chapters .chap .progress {
+    position: absolute;
+    left: 0; bottom: 0; top: 0;
+    background: oklch(0.78 0.26 258 / 0.12);
+    width: 0%;
+    pointer-events: none;
+    transition: width 80ms linear;
+  }
+
+  /* tweaks toggle button — bottom right corner above panel */
+  #tweaks-btn {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 2147483001;
+    background: rgba(8,11,22,0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(120,160,255,0.3);
+    color: var(--paper-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    padding: 10px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 140ms;
+  }
+  #tweaks-btn:hover, #tweaks-btn.on {
+    color: var(--paper);
+    border-color: var(--blue-hot);
+    background: oklch(0.78 0.26 258 / 0.18);
+  }
+
+  /* Hide built-in playback bar's max-width so it spans nicely */
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- Chapter strip overlay -->
+<div id="chapters"></div>
+
+<!-- Tweaks panel -->
+<div id="tweaks">
+  <h5><span>TWEAKS</span><span style="color:var(--mute)">v1.0</span></h5>
+  <div class="tw-row">
+    <label>NOME DO PATROCINADOR</label>
+    <input type="text" id="tw-name" maxlength="18">
+  </div>
+  <div class="tw-row">
+    <label>COR DA MARCA</label>
+    <div class="tw-swatches" id="tw-colors"></div>
+  </div>
+  <div class="tw-row split">
+    <label>SCAN LINES</label>
+    <div class="tw-toggle on" id="tw-scan"></div>
+  </div>
+  <div class="tw-row split">
+    <label>LOOP</label>
+    <div class="tw-toggle on" id="tw-loop"></div>
+  </div>
+  <div style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); font-size:9px; color:var(--mute); letter-spacing:0.16em; line-height:1.6;">
+    ATALHOS:<br>
+    SPACE — PLAY/PAUSE<br>
+    ← → — SEEK 0.1s · SHIFT+← → 1s<br>
+    0 — VOLTAR AO INÍCIO
+  </div>
+</div>
+
+<button id="tweaks-btn">TWEAKS ▸</button>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="animations.jsx"></script>
+<script type="text/babel" src="tour-visuals.jsx"></script>
+<script type="text/babel" src="tour-scenes.jsx"></script>
+
+<script type="text/babel">
+// ───────────────────────────────────────────────────────────────
+// Tweaks state — listen to host edit mode, sync with panel
+// ───────────────────────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "sponsorName": "SUA MARCA",
+  "sponsorColor": "oklch(0.82 0.18 90)",
+  "showScan": true,
+  "loop": true
+}/*EDITMODE-END*/;
+
+const COLOR_OPTIONS = [
+  { value: '#f3f5ff', label: 'BRANCO' },
+  { value: 'oklch(0.78 0.26 258)', label: 'AZUL SG' },
+  { value: 'oklch(0.72 0.22 30)', label: 'VERMELHO' },
+  { value: 'oklch(0.82 0.18 90)', label: 'DOURADO' },
+];
+
+function useTweaks() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    // wire DOM panel ↔ state
+    const nameInput = document.getElementById('tw-name');
+    const scanToggle = document.getElementById('tw-scan');
+    const loopToggle = document.getElementById('tw-loop');
+    const colorsRow = document.getElementById('tw-colors');
+
+    nameInput.value = tweaks.sponsorName;
+    scanToggle.classList.toggle('on', tweaks.showScan);
+    loopToggle.classList.toggle('on', tweaks.loop);
+
+    // build color swatches
+    colorsRow.innerHTML = '';
+    COLOR_OPTIONS.forEach(opt => {
+      const sw = document.createElement('div');
+      sw.className = 'tw-swatch' + (opt.value === tweaks.sponsorColor ? ' active' : '');
+      sw.style.background = opt.value;
+      sw.title = opt.label;
+      sw.addEventListener('click', () => {
+        setTweaks(prev => ({ ...prev, sponsorColor: opt.value }));
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { sponsorColor: opt.value } }, '*');
+      });
+      colorsRow.appendChild(sw);
+    });
+
+    const onName = (e) => {
+      const v = e.target.value.toUpperCase() || 'SUA MARCA';
+      setTweaks(prev => ({ ...prev, sponsorName: v }));
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { sponsorName: v } }, '*');
+    };
+    nameInput.addEventListener('input', onName);
+
+    const onScan = () => {
+      setTweaks(prev => {
+        const next = { ...prev, showScan: !prev.showScan };
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { showScan: next.showScan } }, '*');
+        return next;
+      });
+    };
+    scanToggle.addEventListener('click', onScan);
+
+    const onLoop = () => {
+      setTweaks(prev => {
+        const next = { ...prev, loop: !prev.loop };
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { loop: next.loop } }, '*');
+        return next;
+      });
+    };
+    loopToggle.addEventListener('click', onLoop);
+
+    return () => {
+      nameInput.removeEventListener('input', onName);
+      scanToggle.removeEventListener('click', onScan);
+      loopToggle.removeEventListener('click', onLoop);
+    };
+  }, [tweaks.sponsorName, tweaks.sponsorColor, tweaks.showScan, tweaks.loop]);
+
+  // apply scan to body
+  React.useEffect(() => {
+    document.body.classList.toggle('scan-off', !tweaks.showScan);
+  }, [tweaks.showScan]);
+
+  return tweaks;
+}
+
+// ───────────────────────────────────────────────────────────────
+// Chapters
+// ───────────────────────────────────────────────────────────────
+const CHAPTERS = [
+  { start: 0,  end: 5,   num: '01', label: 'Início' },
+  { start: 5,  end: 13,  num: '02', label: 'Camisa Master' },
+  { start: 13, end: 20,  num: '03', label: 'Costas+Manga' },
+  { start: 20, end: 27,  num: '04', label: 'Placas LED' },
+  { start: 27, end: 34,  num: '05', label: 'CT + Ônibus' },
+  { start: 34, end: 41,  num: '06', label: 'Redes Sociais' },
+  { start: 41, end: 47,  num: '07', label: 'Eventos' },
+  { start: 47, end: 55,  num: '08', label: 'Resumo' },
+];
+const DURATION = 55;
+
+// Chapter bar that has access to timeline context
+function ChapterBar() {
+  const { time, setTime } = useTimeline();
+
+  React.useEffect(() => {
+    const container = document.getElementById('chapters');
+    if (!container) return;
+
+    // build once
+    if (!container.firstChild) {
+      CHAPTERS.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'chap';
+        div.dataset.idx = i;
+        div.innerHTML = `
+          <span class="num">${c.num}</span>
+          <span class="label">${c.label}</span>
+          <div class="progress"></div>
+        `;
+        div.addEventListener('click', () => {
+          setTime(c.start + 0.01);
+        });
+        container.appendChild(div);
+      });
+    }
+    // update active + progress
+    Array.from(container.children).forEach((el, i) => {
+      const c = CHAPTERS[i];
+      const active = time >= c.start && time < c.end;
+      el.classList.toggle('active', active);
+      const prog = el.querySelector('.progress');
+      if (active) {
+        const pct = ((time - c.start) / (c.end - c.start)) * 100;
+        prog.style.width = pct + '%';
+      } else if (time >= c.end) {
+        prog.style.width = '100%';
+      } else {
+        prog.style.width = '0%';
+      }
+    });
+  }, [time, setTime]);
+
+  return null;
+}
+
+// ───────────────────────────────────────────────────────────────
+// Backdrop layer inside Stage canvas
+// ───────────────────────────────────────────────────────────────
+function StageBackdrop() {
+  return (
+    <>
+      <div className="stage-bg-grid" />
+      <div className="stage-holo" />
+      <div className="stage-scan" />
+    </>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+// App
+// ───────────────────────────────────────────────────────────────
+function App() {
+  const tweaks = useTweaks();
+
+  return (
+    <Stage
+      width={1920}
+      height={1080}
+      duration={DURATION}
+      background="#04060d"
+      loop={tweaks.loop}
+      autoplay={true}
+      persistKey="intersg-tour"
+    >
+      <StageBackdrop />
+
+      <SceneIntro        start={0}  end={5}  tweaks={tweaks} />
+      <SceneJerseyMaster start={5}  end={13} tweaks={tweaks} />
+      <SceneJerseyBack   start={13} end={20} tweaks={tweaks} />
+      <SceneStadium      start={20} end={27} tweaks={tweaks} />
+      <SceneInfra        start={27} end={34} tweaks={tweaks} />
+      <SceneSocial       start={34} end={41} tweaks={tweaks} />
+      <SceneEvents       start={41} end={47} tweaks={tweaks} />
+      <SceneSummary      start={47} end={55} tweaks={tweaks} />
+
+      <ChapterBar />
+    </Stage>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+// ───────────────────────────────────────────────────────────────
+// Tweaks panel toggle — wire to host edit mode
+// ───────────────────────────────────────────────────────────────
+(() => {
+  const panel = document.getElementById('tweaks');
+  const btn = document.getElementById('tweaks-btn');
+
+  function open() { panel.classList.add('on'); btn.classList.add('on'); btn.textContent = '✕ FECHAR'; }
+  function close() { panel.classList.remove('on'); btn.classList.remove('on'); btn.textContent = 'TWEAKS ▸'; }
+
+  // Register listener BEFORE announcing availability
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === '__activate_edit_mode') open();
+    if (e.data.type === '__deactivate_edit_mode') close();
+  });
+
+  btn.addEventListener('click', () => {
+    if (panel.classList.contains('on')) {
+      close();
+      window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+    } else {
+      open();
+    }
+  });
+
+  // announce
+  window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+})();
+</script>
+
+</body>
+</html>

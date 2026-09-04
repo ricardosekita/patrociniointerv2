@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Inter SG — Patrocínio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500&display=swap">
+<style>
+  :root {
+    --ink: #04060d;
+    --ink-2: #0a0e1a;
+    --paper: #f3f5ff;
+    --paper-dim: #c8cfe8;
+    --mute: #6b7499;
+    --blue: oklch(0.68 0.22 258);
+    --blue-hot: oklch(0.78 0.26 258);
+    --blue-glow: oklch(0.68 0.22 258 / 0.45);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; min-height: 100vh;
+    background: radial-gradient(120% 120% at 50% 0%, #0c1330 0%, var(--ink) 55%);
+    color: var(--paper);
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 880px; text-align: center; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.3em; color: var(--blue-hot);
+    text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: clamp(36px, 6vw, 64px); line-height: 1.05;
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--blue-hot); }
+  p.sub {
+    color: var(--paper-dim); font-size: 18px; max-width: 560px;
+    margin: 0 auto 56px; line-height: 1.5;
+  }
+  .cards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  a.card {
+    display: block; text-align: left;
+    padding: 32px 28px;
+    border: 1px solid rgba(120,160,255,0.18);
+    background: rgba(255,255,255,0.02);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--paper);
+    transition: border-color 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  }
+  a.card:hover {
+    border-color: var(--blue-hot);
+    background: rgba(120,160,255,0.06);
+    transform: translateY(-3px);
+  }
+  .card .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em; color: var(--blue-hot);
+    text-transform: uppercase; margin-bottom: 12px; display: block;
+  }
+  .card h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px;
+    margin: 0 0 10px;
+  }
+  .card p {
+    color: var(--mute); font-size: 14px; line-height: 1.5; margin: 0;
+  }
+  .card .go {
+    margin-top: 18px; font-size: 13px; color: var(--blue-hot);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em;
+  }
+  footer {
+    margin-top: 56px; font-size: 12px; color: var(--mute);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">/ Inter SG</div>
+  <h1>Onde o bruto vira <em>brilho</em>.</h1>
+  <p class="sub">Material de patrocínio do Inter SG — escolha abaixo o que você quer ver.</p>
+
+  <div class="cards">
+    <a class="card" href="deck.html">
+      <span class="tag">Apresentação</span>
+      <h2>Deck de Patrocínio</h2>
+      <p>23 slides: números, o projeto do novo CT, cotas, ROI e o caminho para fechar a parceria.</p>
+      <div class="go">Abrir deck →</div>
+    </a>
+    <a class="card" href="tour.html">
+      <span class="tag">Vídeo interativo</span>
+      <h2>Tour da Marca</h2>
+      <p>Um passeio visual pela identidade, o dia a dia e o ecossistema do Inter SG.</p>
+      <div class="go">Abrir tour →</div>
+    </a>
+  </div>
+
+  <footer>INTER SG · 2026</footer>
+</div>
+</body>
+</html>
